@@ -1,0 +1,10 @@
+node_modules/
+.env
+.DS_Store
+dist/
+.expo/
+/generated/prisma
+android/app/build/
+ios/Pods/
+google-credentials.json
+uploads/
