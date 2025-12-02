@@ -16,6 +16,7 @@ export default function LoginScreen({ navigation }) {
         try{
             await signIn(email, senha);
         } catch(error) {
+            console.log(error);
             Alert.alert("Erro", "Email ou senha inválidos");
         } finally {
             setLoading(false);
@@ -50,7 +51,7 @@ export default function LoginScreen({ navigation }) {
                 />
 
                 <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-                    {loading} ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Entrar</Text>
+                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Entrar</Text>}
                 </TouchableOpacity>
             </View>
 

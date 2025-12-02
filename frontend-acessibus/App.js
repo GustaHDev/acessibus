@@ -1,24 +1,47 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LoginScreen from "./src/screens/LoginScreen"
-import HomeScreen from "./src/screens/Home"
+import { AuthProvider, AuthContext } from './src/context/AuthContext';
+
+import LoginScreen from "./src/screens/LoginScreen";
+import HomeScreen from "./src/screens/Home";
 import SignUpScreen from './src/screens/SignUp';
-import RecentsScreen from './src/screens/Recents'
-import FavoritesScreen from './src/screens/Favorites'
+import RecentsScreen from './src/screens/Recents';
+import FavoritesScreen from './src/screens/Favorites';
 
 const Stack = createNativeStackNavigator();
 
-export default function App() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+function Routes() {
+  const { signed, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return (
+      <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
+
+  const initialRouteName = signed ? "Home" : "LoginScreen";
+
+    return (
+      <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
         <Stack.Screen name='Home' component={HomeScreen} />
         <Stack.Screen name='LoginScreen' component={LoginScreen} />
         <Stack.Screen name='SignUp' component={SignUpScreen} />
         <Stack.Screen name='Recents' component={RecentsScreen} />
         <Stack.Screen name='Favorites' component={FavoritesScreen} />
       </Stack.Navigator>
-    </NavigationContainer>
   );
+}
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <AuthProvider>
+        <Routes />
+      </AuthProvider>
+    </NavigationContainer>
+  )
 }
