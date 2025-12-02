@@ -1,7 +1,26 @@
-import React from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image } from 'react-native';
+import React, { useContext, useState } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { AuthContext } from '../context/AuthContext';
 
 export default function LoginScreen({ navigation }) {
+    const [email, setEmail] = useState('');
+    const [senha, setSenha] = useState('');
+    const { signIn } = useContext(AuthContext);
+    const [loading, setLoading] = useState(false);
+
+    async function handleLogin() {
+        if (!email || !senha) {
+            return Alert.alert("Erro", "Preencha todos os campos");
+        }
+        setLoading(true);
+        try{
+            await signIn(email, senha);
+        } catch(error) {
+            Alert.alert("Erro", "Email ou senha inválidos");
+        } finally {
+            setLoading(false);
+        }
+    }
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -13,11 +32,25 @@ export default function LoginScreen({ navigation }) {
 
                 <Text style={styles.title}> Login </Text>
 
-                <TextInput style={styles.input} placeholder='Email' keyboardType='email-address' />
-                <TextInput style={styles.input} placeholder='Senha' secureTextEntry />
+                <TextInput 
+                style={styles.input} 
+                placeholder='Email'
+                keyboardType='email-address' 
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize='none'
+                />
 
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Entrar</Text>
+                <TextInput 
+                style={styles.input} 
+                placeholder='Senha' 
+                secureTextEntry 
+                value={senha}
+                onChangeText={setSenha}
+                />
+
+                <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+                    {loading} ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Entrar</Text>
                 </TouchableOpacity>
             </View>
 

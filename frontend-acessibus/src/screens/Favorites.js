@@ -1,22 +1,53 @@
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Image, FlatList } from 'react-native';
+import { AuthContext } from '../context/AuthContext';
+import api from '../services/Api';
 
 export default function FavoritesScreen({ navigation }) {
+    const { signed, user } = useContext(AuthContext);
+    const [favorites, setFavorites] = useState([]);
+
+    useEffect(() => {
+        if (signed) {
+            api.get('/favorites').then(res => setFavorites(res.data)).catch(err => console.log(err));
+        }
+    }, [signed]);
+
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Image source={require("../../assets/logo-acessibus.png")} style={styles.logo} />
-                <Image source={require("../../assets/account_circle.png")} onPress={() => { navigation.navigate("SignUp") }} />
+                <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+                    <Image source={require("../../assets/account_circle.png")} />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.content}>
+                {!signed ? (
+                    <>
+                        <Text style={styles.text}> Você ainda não possui nenhuma linha favorita! Se cadastre para adicionar linhas </Text>
 
-                <Text style={styles.text}> Você ainda não possui nenhuma linha favorita! Se cadastre para adicionar linhas </Text>
-
-                <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("SignUp")}>
-                    <Text style={styles.buttonText}>Cadastre-se</Text>
-                </TouchableOpacity>
-
+                        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("SignUp")}>
+                            <Text style={styles.buttonText}>Cadastre-se</Text>
+                        </TouchableOpacity>
+                    </>
+                ) : (
+                    <View style={{ width: "100%", height: "100%", padding: 20 }}>
+                        <Text style={styles.title}>Linhas favoritas</Text>
+                        {favorites.length === 0 && <Text>Nenhuma linha favoritada foi encontrada</Text>}
+                        <FlatList
+                            data={favorites}
+                            keyExtractor={item => String(item.id)}
+                            renderItem={({ item }) => (
+                                <View style={{ padding: 15, borderBottomWidth: 1, borderColor: "#eee" }}>
+                                    <Text style={{ fontWeight: "bold", fontSize: 16 }}>{item.nome_linha}</Text>
+                                    <Text>{item.itinerario}</Text>
+                                </View>
+                            )}
+                        />
+                    </View>
+                )}
             </View>
 
             <View style={styles.navbar}>

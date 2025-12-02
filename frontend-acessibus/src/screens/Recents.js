@@ -1,21 +1,52 @@
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Image, FlatList } from 'react-native';
+import { AuthContext } from '../context/AuthContext';
+import api from '../services/Api';
 
 export default function RecentsScreen({ navigation }) {
+    const { signed } = useContext(AuthContext);
+    const [recents, setRecents] = useState([]);
+
+    useEffect(() => {
+        if (signed) {
+            api.get('/recents').then(res => setRecents(res.data)).catch(err => console.log(err));
+        }
+    }, [signed]);
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Image source={require("../../assets/logo-acessibus.png")} style={styles.logo} />
-                <Image source={require("../../assets/account_circle.png")} onPress={() => { navigation.navigate("SignUp") }} />
+                <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+                    <Image source={require("../../assets/account_circle.png")} />
+                </TouchableOpacity>
             </View>
 
             <View style={styles.content}>
+                {!signed ? (
+                    <>
+                        <Text style={styles.text}> Você não está logado! Entre para ter acesso às últimas linhas acessadas </Text>
 
-                <Text style={styles.text}> Você não está logado! Entre para ter acesso às últimas linhas acessadas </Text>
-
-                <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("LoginScreen")}>
-                    <Text style={styles.buttonText}>Entrar</Text>
-                </TouchableOpacity>
+                        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("LoginScreen")}>
+                            <Text style={styles.buttonText}>Entrar</Text>
+                        </TouchableOpacity>
+                    </>
+                ) : (
+                    <View style={{ width: '100%', height: '100%', padding: 20 }}>
+                        <Text style={styles.title}>Recentes</Text>
+                        {recents.length === 0 && <Text>Nenhuma linha foi acessada. Acesse uma linha para ver o histórico</Text>}
+                        <FlatList
+                            data={recents}
+                            keyExtractor={item => String(item.id)}
+                            renderItem={({ item }) => (
+                                <View style={{ padding: 15, borderBottomWidth: 1, borderColor: "#eee" }}>
+                                    <Text style={{ fontWeight: "bold", fontSize: 16 }}>{item.nome_linha}</Text>
+                                    <Text>{item.itinerario}</Text>
+                                </View>
+                            )}
+                        />
+                    </View>
+                )}
 
             </View>
 

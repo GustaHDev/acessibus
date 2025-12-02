@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import { AuthContext } from '../context/AuthContext';
 
 export default function HomeScreen({ navigation }) {
+  const { signOut, user } = useContext(AuthContext);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Image source={require("../../assets/logo-acessibus.png")} style={styles.logo} />
-        <TouchableOpacity onPress={() => { navigation.navigate("SignUp") }}>
+        <TouchableOpacity onPress={() => { user ? signOut() : navigation.navigate("SignUp") }}>
           <Image source={require("../../assets/account_circle.png")} />
         </TouchableOpacity>
       </View>
