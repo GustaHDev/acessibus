@@ -1,9 +1,106 @@
-import React, { useContext } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
+import { Audio } from 'expo-av';
+import * as Speech from 'expo-speech';
+import api from '../services/Api';
 
 export default function HomeScreen({ navigation }) {
   const { signOut, user } = useContext(AuthContext);
+
+  const [recording, setRecording] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [processing, setProcessing] = useState(false);
+
+  useEffect(() => {
+    Audio.requestPermissionsAsync();
+  }, []);
+
+  async function startRecording() {
+    try {
+      console.log('Solicitando permissão...');
+      await Audio.requestPermissionsAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true
+      });
+
+      console.log('Iniciando gravação...');
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+
+      setRecording(recording);
+      setIsRecording(true);
+      console.log("Gravando...");
+    } catch (error) {
+      console.log("Falha ao iniciar gravação", error);
+      Alert.alert("Erro", "Não foi possível acessar o microfone");
+    }
+  }
+
+  async function stopRecordingAndSearch() {
+    console.log("Parando gravação...");
+    setProcessing(true);
+    setIsRecording(false);
+
+    try {
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      console.log('Arquivo salvo em:', uri);
+      setRecording(undefined);
+
+      const formData = new FormData();
+      formData.append('audio', {
+        uri: uri,
+        type: 'audio/m4a',
+        name: 'audio_busca.m4a'
+      })
+
+      console.log('Enviando para transcrição...');
+      const responseTranscricao = await api.post('/transcribe', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      const textoReconhecido = responseTranscricao.data.text;
+      console.log("Texto reconhecido:", textoReconhecido);
+
+      if (!textoReconhecido) {
+        Speech.speak("Não foi possível entender o que você disse, por favor, tente novamente");
+        setProcessing(false);
+        return;
+      }
+
+      console.log('Buscando linhas com o termo:', textoReconhecido);
+      const responseBusca = await api.post('/linha/search', { termo: textoReconhecido });
+      const linhasEncontradas = responseBusca.data
+
+      if (linhasEncontradas > 0) {
+        const qtd = linhasEncontradas.length;
+        Speech.speak(`Encontrei ${qtd} linhas para ${textoReconhecido}. Vou te falar cada uma.`);
+
+        linhasEncontradas.forEach(linha => {
+          Speech.speak(`Nome da linha: ${linha.nome_linha}. Itinerário: ${linha.itinerario}.`);
+        });
+      } else {
+        Speech.speak(`Não encontrei nenhuma linha passando por ${textoReconhecido}.`);
+        Alert.alert("Não encontrado", `Nenhuma linha para: "${textoReconhecido}".`);
+      }
+    } catch (error) {
+      console.log("Erro no fluxo de voz", error);
+      Speech.speak("Houve um erro na conexão. Tente novamente.");
+      Alert.alert("Erro", "Falha ao processar voz.");
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  async function handleMicButton() {
+    if (isRecording) {
+      await stopRecordingAndSearch;
+    } else {
+      await startRecording();
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -16,8 +113,25 @@ export default function HomeScreen({ navigation }) {
 
       <View style={styles.content}>
 
-        <TouchableOpacity style={styles.micButton}>
-          <Image source={require("../../assets/mic_button.png")} />
+        <Text style={styles.instructionText}>
+          {isRecording ? "Gravando... Toque para parar" : processing ? "Processando..." : "Toque para falar o destino"}
+        </Text>
+
+
+        <TouchableOpacity style={styles.micButton}
+        onPress={handleMicButton}
+        disabled={processing}
+        >
+          {recording ? (
+            <Image source={require("../../assets/mic_button_recording.png")} />
+          ) : (
+            <Image source={require("../../assets/mic_button.png")} />
+          )}
+          {processing ? (
+            <ActivityIndicator size='large' color='#FFF' />
+          ) : (
+            <Image source={require("../../assets/mic_button.png")} />
+          )}
         </TouchableOpacity>
 
         <Image source={require("../../assets/soundwave.png")} style={styles.soundwave} />
@@ -58,6 +172,12 @@ const styles = StyleSheet.create({
     borderColor: "#ccc"
   },
 
+  instructionText: { 
+    fontSize: 16, 
+    marginBottom: 30, 
+    color: '#777' 
+  },
+
   logo: {
     width: 120,
     height: 70,
@@ -77,7 +197,6 @@ const styles = StyleSheet.create({
   },
 
   micButton: {
-    backgroundColor: "#1A6AD2",
     borderRadius: 200,
     padding: 40,
     marginBottom: 100,
@@ -103,7 +222,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#000",
     borderBottomWidth: 1
   },
-  
+
   navIcon: {
     paddingLeft: 35,
     paddingRight: 35,
