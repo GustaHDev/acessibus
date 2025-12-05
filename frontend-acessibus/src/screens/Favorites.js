@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        bottom: 100
+        textAlign: 'center'
     },
 
     micButton: {

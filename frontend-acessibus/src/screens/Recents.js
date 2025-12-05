@@ -1,15 +1,22 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, FlatList } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, FlatList, ActivityIndicator } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/Api';
 
 export default function RecentsScreen({ navigation }) {
-    const { signed } = useContext(AuthContext);
+    const context = useContext(AuthContext);
+    const signed = context?.signed || false;
+
     const [recents, setRecents] = useState([]);
+    const [loadingData, setLoadingData] = useState(false);
 
     useEffect(() => {
         if (signed) {
-            api.get('/recents').then(res => setRecents(res.data)).catch(err => console.log(err));
+            setLoadingData(true);
+            api.get('/recents')
+                .then(res => setRecents(res.data))
+                .catch(err => console.log("Erro ao buscar recentes:", err))
+                .finally(() => setLoadingData(false));
         }
     }, [signed]);
 
@@ -34,20 +41,28 @@ export default function RecentsScreen({ navigation }) {
                 ) : (
                     <View style={{ width: '100%', height: '100%', padding: 20 }}>
                         <Text style={styles.title}>Recentes</Text>
-                        {recents.length === 0 && <Text>Nenhuma linha foi acessada. Acesse uma linha para ver o histórico</Text>}
-                        <FlatList
-                            data={recents}
-                            keyExtractor={item => String(item.id)}
-                            renderItem={({ item }) => (
-                                <View style={{ padding: 15, borderBottomWidth: 1, borderColor: "#eee" }}>
-                                    <Text style={{ fontWeight: "bold", fontSize: 16 }}>{item.nome_linha}</Text>
-                                    <Text>{item.itinerario}</Text>
-                                </View>
-                            )}
-                        />
+                        {loadingData ? (
+                            <ActivityIndicator color="#000" />
+                        ) : recents.length === 0 ? (
+                            <Text>Nenhuma linha foi acessada. Acesse uma linha para ver o histórico</Text>
+                        ) : (
+                            <FlatList
+                                data={recents}
+                                keyExtractor={item => String(item.id)}
+                                renderItem={({ item }) => (
+                                    <View style={styles.itemContainer}>
+                                        <View>
+                                            <Text style={styles.itemTitle}>{item.nome_linha || item.nome}</Text>
+                                            <Text>{item.itinerario}</Text>
+                                        </View>
+                                        {/* Ícone de favorito se quiser implementar depois */}
+                                        {item.favorito && <Text>❤️</Text>}
+                                    </View>
+                                )}
+                            />
+                        )}
                     </View>
                 )}
-
             </View>
 
             <View style={styles.navbar}>
@@ -97,6 +112,12 @@ const styles = StyleSheet.create({
         padding: 50
     },
 
+    title: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 10
+    },
+
     img: {
         width: 60,
         height: 60,
@@ -107,7 +128,7 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        bottom: 100
+        textAlign: 'center'
     },
 
     micButton: {
@@ -158,5 +179,18 @@ const styles = StyleSheet.create({
         color: "white",
         fontSize: 18,
         fontWeight: "bold"
+    },
+    itemContainer: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderColor: '#eee',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
+
+    itemTitle: {
+        fontWeight: 'bold',
+        fontSize: 16
     }
 });

@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import React, { useContext, useEffect, useState, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Image, Alert, ActivityIndicator, FlatList } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
@@ -8,7 +8,7 @@ import api from '../services/Api';
 export default function HomeScreen({ navigation }) {
   const { signOut, user } = useContext(AuthContext);
 
-  const [recording, setRecording] = useState(null);
+  const recordingRef = useRef(null);
   const [isRecording, setIsRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
 
@@ -29,12 +29,13 @@ export default function HomeScreen({ navigation }) {
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
 
-      setRecording(recording);
+      recordingRef.current = recording;
       setIsRecording(true);
       console.log("Gravando...");
     } catch (error) {
       console.log("Falha ao iniciar gravação", error);
       Alert.alert("Erro", "Não foi possível acessar o microfone");
+      setIsRecording(false);
     }
   }
 
@@ -44,10 +45,20 @@ export default function HomeScreen({ navigation }) {
     setIsRecording(false);
 
     try {
+      const recording = recordingRef.current;
+
+      if (!recording) {
+        console.log("Erro, nenhuma gravação encontrada no ref");
+        setProcessing(false);
+        return;
+      }
+
       await recording.stopAndUnloadAsync();
+
       const uri = recording.getURI();
       console.log('Arquivo salvo em:', uri);
-      setRecording(undefined);
+
+      recordingRef.current = null;
 
       const formData = new FormData();
       formData.append('audio', {
@@ -67,6 +78,8 @@ export default function HomeScreen({ navigation }) {
       if (!textoReconhecido) {
         Speech.speak("Não foi possível entender o que você disse, por favor, tente novamente");
         setProcessing(false);
+        setIsRecording(false);
+        recordingRef.current = null;
         return;
       }
 
@@ -74,7 +87,7 @@ export default function HomeScreen({ navigation }) {
       const responseBusca = await api.post('/linha/search', { termo: textoReconhecido });
       const linhasEncontradas = responseBusca.data
 
-      if (linhasEncontradas > 0) {
+      if (linhasEncontradas.length > 0) {
         const qtd = linhasEncontradas.length;
         Speech.speak(`Encontrei ${qtd} linhas para ${textoReconhecido}. Vou te falar cada uma.`);
 
@@ -91,14 +104,16 @@ export default function HomeScreen({ navigation }) {
       Alert.alert("Erro", "Falha ao processar voz.");
     } finally {
       setProcessing(false);
+      setIsRecording(false);
+      recordingRef.current = null;
     }
   }
 
-  async function handleMicButton() {
+  function handleMicButton() {
     if (isRecording) {
-      await stopRecordingAndSearch;
+      stopRecordingAndSearch();
     } else {
-      await startRecording();
+      startRecording();
     }
   }
 
@@ -106,7 +121,7 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Image source={require("../../assets/logo-acessibus.png")} style={styles.logo} />
-        <TouchableOpacity onPress={() => { user ? signOut() : navigation.navigate("SignUp") }}>
+        <TouchableOpacity onPress={() => { user ? signOut() : navigation.navigate("LoginScreen") }}>
           <Image source={require("../../assets/account_circle.png")} />
         </TouchableOpacity>
       </View>
@@ -119,19 +134,19 @@ export default function HomeScreen({ navigation }) {
 
 
         <TouchableOpacity style={styles.micButton}
-        onPress={handleMicButton}
-        disabled={processing}
+          onPress={handleMicButton}
+          disabled={processing}
         >
-          {recording ? (
+          {isRecording ? (
             <Image source={require("../../assets/mic_button_recording.png")} />
           ) : (
             <Image source={require("../../assets/mic_button.png")} />
-          )}
-          {processing ? (
+          ) && processing ? (
             <ActivityIndicator size='large' color='#FFF' />
           ) : (
             <Image source={require("../../assets/mic_button.png")} />
           )}
+
         </TouchableOpacity>
 
         <Image source={require("../../assets/soundwave.png")} style={styles.soundwave} />
@@ -172,10 +187,10 @@ const styles = StyleSheet.create({
     borderColor: "#ccc"
   },
 
-  instructionText: { 
-    fontSize: 16, 
-    marginBottom: 30, 
-    color: '#777' 
+  instructionText: {
+    fontSize: 16,
+    marginBottom: 30,
+    color: '#777'
   },
 
   logo: {
