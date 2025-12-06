@@ -9,6 +9,8 @@ import HomeScreen from "./src/screens/Home";
 import SignUpScreen from './src/screens/SignUp';
 import RecentsScreen from './src/screens/Recents';
 import FavoritesScreen from './src/screens/Favorites';
+import UserScreen from './src/screens/User';
+import UpdateScreen from './src/screens/UpdateUser';
 
 const Stack = createNativeStackNavigator();
 
@@ -23,7 +25,7 @@ function Routes() {
     );
   }
 
-  const initialRouteName = signed ? "Home" : "LoginScreen";
+  const initialRouteName = "Home";
 
     return (
       <Stack.Navigator initialRouteName={initialRouteName} screenOptions={{ headerShown: false }}>
@@ -32,6 +34,8 @@ function Routes() {
         <Stack.Screen name='SignUp' component={SignUpScreen} />
         <Stack.Screen name='Recents' component={RecentsScreen} />
         <Stack.Screen name='Favorites' component={FavoritesScreen} />
+        <Stack.Screen name='User' component={UserScreen} />
+        <Stack.Screen name='Update' component={UpdateScreen} />
       </Stack.Navigator>
   );
 }

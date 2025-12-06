@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
 import api from '../services/Api';
+import { AuthContext } from '../context/AuthContext';
 
-export default function SignUpScreen({ navigation }) {
+export default function UpdateScreen({ navigation }) {
+    const user = useContext(AuthContext);
+    
     const [nome, setNome] = useState('');
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
@@ -89,7 +92,7 @@ export default function SignUpScreen({ navigation }) {
                     )}
                 </TouchableOpacity>
 
-                <Text style={styles.title}> Cadastre-se </Text>
+                <Text style={styles.title}> Atualizar Perfil </Text>
 
                 <TextInput style={styles.input}
                     placeholder='Nome'

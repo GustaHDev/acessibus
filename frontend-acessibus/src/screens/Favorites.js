@@ -18,34 +18,48 @@ export default function FavoritesScreen({ navigation }) {
         <View style={styles.container}>
             <View style={styles.header}>
                 <Image source={require("../../assets/logo-acessibus.png")} style={styles.logo} />
-                <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-                    <Image source={require("../../assets/account_circle.png")} />
+
+                <TouchableOpacity onPress={() => { user ? handleSignOut() : navigation.navigate("LoginScreen") }}>
+                    <Image
+                        source={
+                            user && user.foto
+                                ? { uri: user.foto }
+                                : require("../../assets/account_circle.png")
+                        }
+                        style={styles.profileImage}
+                    />
                 </TouchableOpacity>
             </View>
 
             <View style={styles.content}>
                 {!signed ? (
-                    <>
+                    <View style={styles.notLogged}>
                         <Text style={styles.text}> Você ainda não possui nenhuma linha favorita! Se cadastre para adicionar linhas </Text>
 
                         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("SignUp")}>
                             <Text style={styles.buttonText}>Cadastre-se</Text>
                         </TouchableOpacity>
-                    </>
+                    </View>
                 ) : (
-                    <View style={{ width: "100%", height: "100%", padding: 20 }}>
+                    <View style={styles.listWrapper}>
                         <Text style={styles.title}>Linhas favoritas</Text>
-                        {favorites.length === 0 && <Text>Nenhuma linha favoritada foi encontrada</Text>}
-                        <FlatList
-                            data={favorites}
-                            keyExtractor={item => String(item.id)}
-                            renderItem={({ item }) => (
-                                <View style={{ padding: 15, borderBottomWidth: 1, borderColor: "#eee" }}>
-                                    <Text style={{ fontWeight: "bold", fontSize: 16 }}>{item.nome_linha}</Text>
-                                    <Text>{item.itinerario}</Text>
-                                </View>
-                            )}
-                        />
+                        <View style={styles.listBox}>
+                            {favorites.length === 0 &&
+                                <Text style={{ textAlign: 'center', marginTop: 20, fontSize: 16, padding: 20 }}>Nenhuma linha favoritada foi encontrada</Text>}
+                            <FlatList
+                                data={favorites}
+                                keyExtractor={item => String(item.id)}
+                                showsVerticalScrollIndicator={true}
+                                renderItem={({ item }) => (
+                                    <View style={styles.itemContainer}>
+                                        <View style={{ flex: 1, paddingRight: 10 }}>
+                                            <Text style={{ fontWeight: "bold", fontSize: 16 }}>{item.nome_linha}</Text>
+                                            <Text>{item.itinerario}</Text>
+                                        </View>
+                                    </View>
+                                )}
+                            />
+                        </View>
                     </View>
                 )}
             </View>
@@ -72,6 +86,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff'
+    },
+
+    notLogged: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingBottom: 100
     },
 
     header: {
@@ -103,6 +124,12 @@ const styles = StyleSheet.create({
         padding: 50
     },
 
+    title: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 10
+    },
+
     content: {
         flex: 1,
         alignItems: "center",
@@ -110,18 +137,14 @@ const styles = StyleSheet.create({
         textAlign: 'center'
     },
 
-    micButton: {
-        backgroundColor: "#1A6AD2",
-        borderRadius: 200,
-        padding: 40,
-        marginBottom: 20,
-        elevation: 5
-    },
-
-    soundwave: {
-        width: 200,
-        height: 80,
-        resizeMode: "contain"
+    profileImage: {
+        width: 70,
+        height: 70,
+        borderRadius: 50,
+        borderWidth: 2,
+        borderColor: '#007AFF',
+        resizeMode: "cover",
+        backgroundColor: '#eee'
     },
 
     navbar: {
@@ -158,5 +181,32 @@ const styles = StyleSheet.create({
         color: "white",
         fontSize: 18,
         fontWeight: "bold"
-    }
+    },
+
+    listWrapper: {
+        flex: 1,
+        width: '100%',
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: '50%'
+    },
+
+    listBox: {
+        flex: 1, // Ocupa todo o espaço disponível dentro do wrapper
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 10,
+        backgroundColor: '#f9f9f9',
+        overflow: 'hidden'
+    },
+
+    itemContainer: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderColor: '#e0e0e0', // Borda mais suave entre itens
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#fff' // Fundo branco para o item contrastar com o cinza da caixa
+    },
 });

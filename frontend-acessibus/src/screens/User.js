@@ -2,25 +2,26 @@ import React, { useContext, useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 
-export default function LoginScreen({ navigation }) {
-    const [email, setEmail] = useState('');
-    const [senha, setSenha] = useState('');
-    const { signIn } = useContext(AuthContext);
-    const [loading, setLoading] = useState(false);
+export default function UserScreen({ navigation }) {
+    1
+    const { signOut, user } = useContext(AuthContext);
 
-    async function handleLogin() {
-        if (!email || !senha) {
-            return Alert.alert("Erro", "Preencha todos os campos");
-        }
-        setLoading(true);
-        try {
-            await signIn(email, senha);
-        } catch (error) {
-            console.log(error);
-            Alert.alert("Erro", "Email ou senha inválidos");
-        } finally {
-            setLoading(false);
-        }
+    function handleSignOut() {
+        Alert.alert(
+            "Sair",
+            "Deseja realmente sair da sua conta?",
+            [
+                {
+                    text: "Cancelar",
+                    style: "cancel"
+                },
+                {
+                    text: "Sair",
+                    onPress: () => signOut(),
+                    style: "destructive"
+                }
+            ]
+        );
     }
     return (
         <View style={styles.container}>
@@ -29,34 +30,15 @@ export default function LoginScreen({ navigation }) {
             </View>
 
             <View style={styles.content}>
-                <Image source={require("../../assets/account_circle.png")} />
+                <Image source={{ uri: user.foto }} style={styles.profileImage} />
 
-                <Text style={styles.title}> Login </Text>
-
-                <TextInput
-                    style={styles.input}
-                    placeholder='Email'
-                    keyboardType='email-address'
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize='none'
-                />
-
-                <TextInput
-                    style={styles.input}
-                    placeholder='Senha'
-                    secureTextEntry
-                    value={senha}
-                    onChangeText={setSenha}
-                    autoCapitalize='none'
-                />
-
-                <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Entrar</Text>}
+                <Text style={styles.title}> Nome: {user.nome} </Text>
+                <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Update")}>
+                    <Text style={styles.buttonText}>Editar Perfil</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.linkButton} onPress={() => navigation.navigate("SignUp")}>
-                    <Text style={styles.linkText}>Ou clique aqui para criar conta</Text>
+                <TouchableOpacity style={styles.button} onPress={handleSignOut}>
+                    <Text style={styles.buttonText}>Fazer logoff</Text>
                 </TouchableOpacity>
             </View>
 
@@ -141,15 +123,15 @@ const styles = StyleSheet.create({
         fontWeight: "bold"
     },
 
-    linkButton: {
-        marginTop: 10,
-        padding: 10
-    },
-
-    linkText: {
-        color: '#007AFF', 
-        textDecorationLine: 'underline',
-        fontSize: 16
+    profileImage: {
+        width: 185,
+        height: 185,
+        borderRadius: 100,
+        borderWidth: 2,
+        borderColor: '#007AFF',
+        resizeMode: "cover",
+        backgroundColor: '#eee',
+        margin: 15
     },
 
     socialContainer: {

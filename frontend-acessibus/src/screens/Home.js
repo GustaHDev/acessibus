@@ -16,6 +16,10 @@ export default function HomeScreen({ navigation }) {
     Audio.requestPermissionsAsync();
   }, []);
 
+  function handleSignOut() {
+    Alert
+  }
+
   async function startRecording() {
     try {
       console.log('Solicitando permissão...');
@@ -121,8 +125,15 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Image source={require("../../assets/logo-acessibus.png")} style={styles.logo} />
-        <TouchableOpacity onPress={() => { user ? signOut() : navigation.navigate("LoginScreen") }}>
-          <Image source={require("../../assets/account_circle.png")} />
+        <TouchableOpacity onPress={() => { user ? navigation.navigate("User") : navigation.navigate("LoginScreen") }}>
+          <Image
+            source={
+              user && user.foto
+                ? { uri: user.foto }
+                : require("../../assets/account_circle.png")
+            }
+            style={styles.profileImage}
+          />
         </TouchableOpacity>
       </View>
 
@@ -236,6 +247,16 @@ const styles = StyleSheet.create({
     bottom: 60,
     borderBottomColor: "#000",
     borderBottomWidth: 1
+  },
+
+  profileImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    resizeMode: "cover",
+    backgroundColor: '#eee'
   },
 
   navIcon: {
