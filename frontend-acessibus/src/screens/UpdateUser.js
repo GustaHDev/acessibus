@@ -1,41 +1,60 @@
 import React, { useContext, useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
-import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
 import api from '../services/Api';
 import { AuthContext } from '../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function UpdateScreen({ navigation }) {
-    const user = useContext(AuthContext);
-    
-    const [nome, setNome] = useState('');
-    const [email, setEmail] = useState('');
-    const [senha, setSenha] = useState('');
-    const [foto, setFoto] = useState(null);
+    const { user, setUser } = useContext(AuthContext);
+
+    const [nome, setNome] = useState(user?.nome || '');
+    const [email, setEmail] = useState(user?.email || '');
+    const [senha, setSenha] = useState(user?.senha || '');
+    const [foto, setFoto] = useState(user?.foto || null);
     const [imageBase64, setImageBase64] = useState(null);
 
     const [loading, setLoading] = useState(false);
 
-    async function handleSignUp() {
-        if (!nome, !email, !senha) {
-            Alert.alert("Erro", "Preencha todos os campos obrigatórios");
-            return;
-        }
-
+    async function handleUpdate() {
         setLoading(true);
         try {
-            await api.post('/user', {
+            // Monta o objeto apenas com o que mudou ou é necessário
+            const dataToSend = {
                 nome,
                 email,
-                senha,
-                foto: imageBase64
-            });
-            Alert.alert("Sucesso", "Conta criada com sucesso! Redirecionando para página de login.");
-            navigation.navigate('LoginScreen');
+                // Só envia senha se o usuário digitou algo novo
+                ...(senha ? { senha } : {}),
+                // Só envia foto se o usuário escolheu uma nova
+                ...(imageBase64 ? { foto: imageBase64 } : {})
+            };
+
+            const response = await api.put('/user', dataToSend);
+            const updatedUser = response.data;
+
+            // --- PULO DO GATO: ATUALIZAR O CONTEXTO GLOBAL ---
+            // O backend devolve o usuário atualizado (mas sem token).
+            // Precisamos manter o token antigo e atualizar o resto.
+
+            // 1. Pega o token atual do storage para garantir
+            const currentToken = await AsyncStorage.getItem('@RNAuth:token');
+
+            // 2. Cria o novo objeto completo
+            const newUserObject = { ...updatedUser, token: currentToken }; // Opcional, depende de como seu user é estruturado
+
+            // 3. Atualiza o Estado Global (A Home vai mudar a foto na hora!)
+            setUser(updatedUser);
+
+            // 4. Atualiza o Storage (Para persistir se fechar o app)
+            await AsyncStorage.setItem('@RNAuth:user', JSON.stringify(updatedUser));
+
+            Alert.alert("Sucesso", "Perfil atualizado!");
+            navigation.goBack(); // Volta para a tela anterior
+
         } catch (error) {
-            console.log(error)
-            const message = error.response?.data?.error || "Não foi possível realizar o cadastro."
-            Alert.alert("Erro", message)
+            console.log(error);
+            const msg = error.response?.data?.error || "Não foi possível atualizar.";
+            Alert.alert("Erro", msg);
         } finally {
             setLoading(false);
         }
@@ -85,11 +104,10 @@ export default function UpdateScreen({ navigation }) {
 
             <View style={styles.content}>
                 <TouchableOpacity onPress={pickImage}>
-                    {foto ? (
-                        <Image source={{ uri: foto }} style={styles.avatar} />
-                    ) : (
-                        <Image source={require("../../assets/add_picture.png")} style={{ marginBottom: 20, width: 80, height: 80, resizeMode: 'contain' }} />
-                    )}
+                    <Image 
+                        source={foto ? { uri: foto } : require("../../assets/account_circle.png")} 
+                        style={styles.avatar} 
+                    />
                 </TouchableOpacity>
 
                 <Text style={styles.title}> Atualizar Perfil </Text>
@@ -116,8 +134,8 @@ export default function UpdateScreen({ navigation }) {
                     autoCapitalize='none'
                 />
 
-                <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
-                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Cadastrar</Text>}
+                <TouchableOpacity style={styles.button} onPress={handleUpdate} disabled={loading}>
+                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Salvar alterações</Text>}
                 </TouchableOpacity>
             </View>
 

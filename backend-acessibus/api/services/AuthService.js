@@ -26,6 +26,7 @@ class AuthService {
             id: user.id,
             nome: user.nome,
             email: user.email,
+            foto: user.foto,
             token: token
         };
     }

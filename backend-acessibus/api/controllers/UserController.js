@@ -6,7 +6,7 @@ class UserController {
         const { nome, email, senha, foto } = req.body;
         console.log("[CONTROLLER] Iniciando registro...");
 
-        try{
+        try {
             const user = await userService.registerUser(nome, email, senha, foto);
             console.log("[CONTROLLER] Usuário criado com sucesso!");
             return res.status(201).json(user);
@@ -17,6 +17,26 @@ class UserController {
             }
             console.log(error);
             return res.status(500).json({ error: "Erro interno do servidor" });
+        }
+    }
+
+    update = async (req, res) => {
+        try {
+            const userId = req.userId;
+            const { nome, email, senha, foto } = req.body;
+
+            const updatedUser = await userService.updateUser(userId, {
+                nome, email, senha, foto
+            });
+
+            return res.json(updatedUser);
+
+        } catch (error) {
+            console.log("Erro ao atualizar", error);
+            if (error.message === "Este email já está em uso por outra pessoa") {
+                return res.status(400).json({ error: error.message });
+            }
+            return res.status(500).json({ error: "Erro ao atualizar perfil" });
         }
     }
 

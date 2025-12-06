@@ -17,7 +17,13 @@ export default function UserScreen({ navigation }) {
                 },
                 {
                     text: "Sair",
-                    onPress: () => signOut(),
+                    onPress: async () => {
+                        await signOut();
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Home' }],
+                        })
+                    },
                     style: "destructive"
                 }
             ]
